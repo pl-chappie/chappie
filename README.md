@@ -30,8 +30,14 @@ GLIBC is required to run chappie. This can be installed with a package manager o
 
 run/run.sh <jar_path> <extra_jars> <jar_main_class> <args>
 
-In addition, a small test program is provided at `test`
+In addition, a small testing program is provided at `test`, called `chappie_test`. It performs traditional matrix multiplication. `chappie_test.jar` can be built with `$ ant jar` in `test`. A bootstrapping script for `chappie_test` is provided at `run/chappie_test.sh` that can also be used as a model for implementing bootstrapping scripts for other programs.
 
 ## Output ##
 
-At program termination, the chaperone writes all observations to two `.csv` files. `chappie.trace.csv` contains a long-format time series of the number of threads for each Java activity state. `chappie.thread.csv` contains a long-format time-series of differential package and DRAM energy consumption and differential memory consumption for each thread. These are formatted for ease of use in R or csv manipulation, such as `pandas`. More details regarding results can be found in the [wiki](https://github.com/anthonycanino1/chappie/wiki/Scripts-and-Figure-Generation).
+When the program terminates, chappie writes a set of output files to `chappie.<jar name>`. Included are:
+
+ - `chappie.thread.csv`: Data for threads at the Java-level
+ - `chappie.trace.csv`: Data for socket energy consumption at the Java-level
+ - `log.hpl`: Data for thread stack traces at the Java-level
+ - `chappie.application.csv`: Data for threads at the OS-level
+ - `chappie.jiffies.csv`: Data for cpu jiffies consumption at the OS-level
