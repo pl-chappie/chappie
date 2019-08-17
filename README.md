@@ -2,6 +2,10 @@
 
 `chappie` is a runtime observer for Java that collects data for the functional state of an executed program at the thread level. Collected data spans the thread, application, and system levels, indexed by an integer epoch.
 
+## Technical Report ##
+
+We provide a [technical report](chappie-technical.pdf) that details our experience with simulation and includes figures for all of our experiments.
+
 ## Utilities ##
 
 `chappie` uses the following libraries for sampling:
