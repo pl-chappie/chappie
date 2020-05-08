@@ -124,12 +124,10 @@ def main():
                 df['freq'] = pd.cut(df.freq, bins = freq_bins)
                 df = df.groupby(['epoch', 'freq']).cpu.count()
                 df = df / df.groupby('epoch').sum()
-                # df = df.groupby(['epoch', 'freq', 'iter']).cpu.count().groupby(['epoch', 'freq']).mean()
 
                 ref['freq'] = pd.cut(ref.freq, bins = freq_bins)
                 ref = ref.groupby(['epoch', 'freq']).cpu.count()
                 ref = ref / ref.groupby('epoch').sum()
-                # ref = ref.groupby(['epoch', 'freq', 'iter']).cpu.count().groupby(['epoch', 'freq']).mean()
             elif f_size == 1:
                 df = df.groupby(['epoch']).cpu.count()
                 ref = ref.groupby(['epoch']).cpu.count()
@@ -142,12 +140,10 @@ def main():
                 df = df.to_frame().reset_index()
                 df['cpu'] = pd.cut(df.cpu, bins = cpu_bins, include_lowest = True)
                 df = df.groupby(['freq', 'cpu']).count().epoch.fillna(0).astype(int)
-                # df = df / df.groupby('freq').sum()
 
                 ref = ref.to_frame().reset_index()
                 ref['cpu'] = pd.cut(ref.cpu, bins = cpu_bins, include_lowest = True)
                 ref = ref.groupby(['freq', 'cpu']).count().epoch.fillna(0).astype(int)
-                # ref = ref / ref.groupby('freq').sum()
             elif c_size == 1:
                 df = df.groupby(['freq']).cpu.count()
                 ref = ref.groupby(['freq']).cpu.count()
