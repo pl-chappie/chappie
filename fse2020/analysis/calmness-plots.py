@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 
+import argparse
 import json
 import os
-import os.path as op
 
 from itertools import product
 
@@ -64,36 +64,40 @@ def calmness_plot(df, color = 'blue', label = None):
     return ax.get_figure()
 
 def main():
-    if not op.exists('plots'):
-        os.mkdir('plots')
-    root = op.join('..', 'chappie-data', 'fse2020')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-work-directory')
+    args = parser.parse_args()
 
-    ref_dir = op.join(root, 'freq')
-    data_dir = op.join(root, 'calmness')
-    file_from = lambda k: op.join('raw', str(k))
+    data_path = args.work_directory
+    plots_path = os.path.exists(data_path, 'plots')
+    if not os.path.exists(plots_path):
+        os.mkdir(plots_path)
 
-    benchs = np.sort(os.listdir(ref_dir))
+    calm_data = os.path.join(data_path, 'calm')
+    profile_data = os.path.join(data_path, 'profile')
+    file_from = lambda k: os.path.join('raw', str(k))
+
+    benchs = np.sort(os.listdir(calm_data))
     benchs = tqdm(benchs)
 
     summary = []
     for bench in benchs:
         benchs.set_description(bench + " - ref")
 
-        if not op.exists('plots/{}'.format(bench)):
-            os.mkdir('plots/{}'.format(bench))
-
+        if not os.path.exists(os.path.join(plots_path, bench)):
+            os.mkdir(os.path.join(plots_path, bench))
         a = 2; b = 10
 
         df = []
-        for rate in os.listdir(op.join(data_dir, bench)):
+        for rate in os.listdir(os.path.join(profile_data, bench)):
             benchs.set_description(bench + " - " + rate)
 
             e = [parse_energy(
-                op.join(data_dir, bench, rate, file_from(k), 'energy.csv')
+                os.path.join(profile_data, bench, rate, file_from(k), 'energy.csv')
             ) for k in range(a, b)]
 
             t = [parse_timestamp(
-                op.join(data_dir, bench, rate, file_from(k), 'time.json')
+                os.path.join(profile_data, bench, rate, file_from(k), 'time.json')
             ) for k in range(a, b)]
 
             d = {
@@ -119,12 +123,11 @@ def main():
 
         for col, color, label in zip(['energy', 'runtime', 'power'], [u'#2ca02c', u'#d62728', u'#1f77b4'], ['Energy (J)', 'Runtime (s)', 'Power (W)']):
             calmness_plot(df[col], color, label)
-            plt.savefig(op.join('plots', bench, '{}.pdf'.format(col)), bbox_inches = 'tight')
+            plt.savefig(os.path.join('plots', bench, '{}.pdf'.format(col)), bbox_inches = 'tight')
             plt.close()
 
     df = pd.concat(summary).reset_index().set_index(['rate', 'benchmark'])['mean'].unstack()
     df.index = df.index.astype(str)
-    print(df)
 
     ax = df.plot.line(
         style = ['o-', 's-', 'D-', 'h-', 'v-', 'P-', '^-', 'H-', '<-', '*-', '>-', 'X-', 'd-'],
@@ -142,9 +145,8 @@ def main():
     plt.xticks(fontsize = 40, rotation = 30)
     plt.yticks(fontsize = 40)
 
-    plt.savefig(op.join('plots', 'runtime.pdf'), bbox_inches = 'tight')
+    plt.savefig(os.path.join(plots_root, 'runtime.pdf'), bbox_inches = 'tight')
     plt.close()
-
 
 if __name__ == '__main__':
     main()

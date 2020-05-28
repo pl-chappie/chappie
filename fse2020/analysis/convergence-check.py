@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 
+import argparse
 import json
 import os
-import os.path as op
 
 from itertools import product
 
@@ -30,29 +30,34 @@ rates = {
 }
 
 def main():
-    if not op.exists('plots'):
-        os.mkdir('plots')
-    root = op.join('..', 'chappie-data', 'fse2020')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-work-directory')
+    args = parser.parse_args()
 
-    ref_dir = op.join(root, 'freq')
-    data_dir = op.join(root, 'profile')
-    file_from = lambda k: op.join('raw', str(k))
+    data_path = args.work_directory
+    plots_path = os.path.exists(data_path, 'plots')
+    if not os.path.exists(plots_path):
+        os.mkdir(plots_path)
 
-    benchs = np.sort(os.listdir(ref_dir))
+    calm_data = os.path.join(data_path, 'calm')
+    profile_data = os.path.join(data_path, 'profile')
+    file_from = lambda k: os.path.join('raw', str(k))
+
+    benchs = np.sort(os.listdir(calm_data))
     benchs_ = tqdm(benchs)
 
     summary = []
     for bench in benchs_:
         benchs_.set_description(bench)
 
-        if not op.exists('plots/{}'.format(bench)):
-            os.mkdir('plots/{}'.format(bench))
+        if not os.path.exists(os.path.join(plots_path, bench)):
+            os.mkdir(os.path.join(plots_path, bench))
 
         a = 2; b = 10
 
         df = pd.concat([pd.read_csv(
-            op.join(data_dir, bench, str(n), 'summary', 'method.csv')
-        ).assign(batch = n) for n in os.listdir(op.join(data_dir, bench))])
+            op.join(profile_data, bench, str(n), 'summary', 'method.csv')
+        ).assign(batch = n) for n in os.listdir(op.join(profile_data, bench))])
 
         batches = df.batch.max()
 
@@ -83,13 +88,12 @@ def main():
     df.batches = df.batches.astype(int)
     df['rate'] = df.index.map(rates)
     df = df[['rate', 'batches', 'pcc', 'pcc_err', 'rmse']]
-    print(df)
 
     df.index = df.index.map(lambda x: r'\texttt{' + x + '}')
     df = df.reset_index().transform(lambda x: x.map('{} & '.format)).sum(axis = 1).str[:-1].map(lambda x: x[:-1] + ' \\\\\n')
     table = df.values
 
-    with open('plots/convergence-table.tex', 'w') as f:
+    with open(os.path.join(plots_path, 'convergence-table.tex', 'w') as f:
         [f.write(row) for row in table]
 
 if __name__ == '__main__':

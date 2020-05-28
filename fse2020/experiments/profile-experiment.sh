@@ -1,76 +1,67 @@
 #!/bin/bash
+
+function run_profiling_experiment {
+  mkdir ${data}/${bench}
+  for i in `seq 1 $cold_iters`; do
+    work_dir=${data_root}/${bench}/${i}
+    rm -rf $work_dir
+    mkdir $work_dir
+    $dacapo_command $work_dir "-Dchappie.rate=$rate" $bench "--size $size --iterations $hot_iters"
+  done
+}
+
 chappie_root=$(realpath `dirname "$0"`)/../..
-# this should be changed to the location desired
-data_root=/home/timur/projects/chappie-data
+experiment_root=$chappie_root/experiments
+dacapo_command=$experiment_root/dacapo.sh
+
+data_root=$1/profile
 mkdir $data_root
 
-data_root=$data_root/fse2020
-mkdir $data_root
+hot_iters=10
 
-current_data_root=$data_root/profile
-mkdir $current_data_root
-
+cold_iters=4
+rate=8
 benchs=(
   biojava
   jython
 )
 size=default
-iters=10
 
 for bench in ${benchs[@]}; do
-  mkdir ${current_data_root}/${bench}
-  for i in `seq 0 3`; do
-    work_dir=${current_data_root}/${bench}/${i}
-    sudo rm -rf $work_dir
-    $(realpath `dirname "$0"`)/dacapo.sh $work_dir "-Dchappie.rate=8" $bench "--size $size --iterations $iters"
-  done
+  run_profiling_experiment
 done
 
+rate=16
 benchs=(
   xalan
 )
 size=default
-iters=10
 
 for bench in ${benchs[@]}; do
-  mkdir ${current_data_root}/${bench}
-  for i in `seq 0 3`; do
-    work_dir=${current_data_root}/${bench}/${i}
-    sudo rm -rf $work_dir
-    $(realpath `dirname "$0"`)/dacapo.sh $work_dir "-Dchappie.rate=16" $bench "--size $size --iterations $iters"
-  done
+  run_profiling_experiment
 done
 
+rate=128
 benchs=(
   avrora
 )
 size=large
-iters=10
 
 for bench in ${benchs[@]}; do
-  mkdir ${current_data_root}/${bench}
-  for i in `seq 0 3`; do
-    work_dir=${current_data_root}/${bench}/${i}
-    sudo rm -rf $work_dir
-    $(realpath `dirname "$0"`)/dacapo.sh $work_dir "-Dchappie.rate=128" $bench "--size $size --iterations $iters"
-  done
+  run_profiling_experiment
 done
 
+rate=8
 benchs=(
   batik
 )
 size=large
-iters=10
 
 for bench in ${benchs[@]}; do
-  mkdir ${current_data_root}/${bench}
-  for i in `seq 0 3`; do
-    work_dir=${current_data_root}/${bench}/${i}
-    sudo rm -rf $work_dir
-    $(realpath `dirname "$0"`)/dacapo.sh $work_dir "-Dchappie.rate=8" $bench "--size $size --iterations $iters"
-  done
+  run_profiling_experiment
 done
 
+rate=16
 benchs=(
   eclipse
   h2
@@ -79,28 +70,17 @@ benchs=(
   tomcat
 )
 size=large
-iters=10
 
 for bench in ${benchs[@]}; do
-  mkdir ${current_data_root}/${bench}
-  for i in `seq 0 3`; do
-    work_dir=${current_data_root}/${bench}/${i}
-    sudo rm -rf $work_dir
-    $(realpath `dirname "$0"`)/dacapo.sh $work_dir "-Dchappie.rate=16" $bench "--size $size --iterations $iters"
-  done
+  run_profiling_experiment
 done
 
+rate=16
 benchs=(
   graphchi
 )
 size=huge
-iters=10
 
 for bench in ${benchs[@]}; do
-  mkdir ${current_data_root}/${bench}
-  for i in `seq 0 3`; do
-    work_dir=${current_data_root}/${bench}/${i}
-    sudo rm -rf $work_dir
-    $(realpath `dirname "$0"`)/dacapo.sh $work_dir "-Dchappie.rate=16" $bench "--size $size --iterations $iters"
-  done
+  run_profiling_experiment
 done

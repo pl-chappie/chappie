@@ -1,9 +1,9 @@
-# chappie FSE2020 data #
+# `chappie` FSE 2020 experiments and data #
 
-The collected scripts used to produce our FSE2020 submission data.
+This directory contains the scripts used to run the experiments and analysis described in our FSE 2020 publication. The plots are included as well for comparison with reproduced data.
 
-To run the experiment scripts, build chappie and the dacapo wrapper (`./wrapper`).
+The all data can be reproduced using the following after `chappie` is set up:
 
-```
-TODO(timur): update the scripts to be easier to run from anywhere; in particular is the data directory
+```bash
+sudo ./fse2020/run-experiments.sh path/to/data
 ```

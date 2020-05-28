@@ -1,10 +1,8 @@
 #!/usr/bin/python3
 
-# this needs plot testing
-
+import argparse
 import json
 import os
-import os.path as op
 
 from itertools import product
 
@@ -17,20 +15,17 @@ import pandas as pd
 
 from tqdm import tqdm
 
-
 def parse_timestamp(path):
     ts = np.sort([int(t) for t in json.load(open(path)).values()])
     return (np.max(ts) - np.min(ts)) / 1000000000
 
 _RAPL_WRAPAROUND = 16384
 
-
 def rapl_wrap_around(reading):
     if reading >= 0:
         return reading
     else:
         return max(reading + _RAPL_WRAPAROUND, 0)
-
 
 def parse_energy(path, i):
     energy = pd.read_csv(path, delimiter = ';')
@@ -111,40 +106,45 @@ def ranking_plot(df):
 
 
 def main():
-    if not op.exists('plots'):
-        os.mkdir('plots')
-    root = op.join('..', 'chappie-data', 'fse2020')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-work-directory')
+    args = parser.parse_args()
 
-    ref_dir = op.join(root, 'freq')
-    data_dir = op.join(root, 'profile')
-    file_from = lambda k: op.join('raw', str(k))
+    data_path = args.work_directory
+    plots_path = os.path.exists(data_path, 'plots')
+    if not os.path.exists(plots_path):
+        os.mkdir(plots_path)
 
-    benchs = np.sort(os.listdir(ref_dir))
+    calm_data = os.path.join(data_path, 'calm')
+    profile_data = os.path.join(data_path, 'profile')
+    file_from = lambda k: os.path.join('raw', str(k))
+
+    benchs = np.sort(os.listdir(calm_data))
     benchs_ = tqdm(benchs)
 
     summary = []
     for bench in benchs_:
         benchs_.set_description(bench)
 
-        if not op.exists('plots/{}'.format(bench)):
-            os.mkdir('plots/{}'.format(bench))
+        if not os.path.exists(os.path.join(plots_path, bench)):
+            os.mkdir(os.path.join(plots_path, bench))
 
         a = 2; b = 10
 
         df = pd.concat([pd.read_csv(
-            op.join(data_dir, bench, str(n), file_from(k), 'method.csv'),
+            os.path.join(profile_data, bench, str(n), file_from(k), 'method.csv'),
             delimiter = ';'
-        ).assign(iter = k) for n, k in product(os.listdir(op.join(data_dir, bench)), range(a, b))])
+        ).assign(iter = k) for n, k in product(os.listdir(os.path.join(profile_data, bench)), range(a, b))])
         df.timestamp //= 1000000
 
         id = [{int(k): int(v) for k, v in json.load(open(
-            op.join(data_dir, bench, str(n), file_from(k), 'time.json'))
-        ).items()} for n, k in product(os.listdir(op.join(data_dir, bench)), range(a, b))]
+            os.path.join(profile_data, bench, str(n), file_from(k), 'time.json'))
+        ).items()} for n, k in product(os.listdir(os.path.join(profile_data, bench)), range(a, b))]
 
         energy = pd.concat([parse_energy(
-            op.join(data_dir, bench, str(n), file_from(k), 'energy.csv'),
+            os.path.join(profile_data, bench, str(n), file_from(k), 'energy.csv'),
             i
-        ) for (n, k), i in zip(product(os.listdir(op.join(data_dir, bench)), range(a, b)), id)])
+        ) for (n, k), i in zip(product(os.listdir(os.path.join(profile_data, bench)), range(a, b)), id)])
 
         df = pd.merge(df, energy, on = 'timestamp', how = 'left').dropna(subset = [0])
         df = filter_to_application(df)
@@ -153,8 +153,8 @@ def main():
         obliv.name = 'energy'
 
         df = pd.concat([pd.read_csv(
-            op.join(data_dir, bench, str(n), 'summary', 'method.csv')
-        ) for n in os.listdir(op.join(data_dir, bench))])
+            os.path.join(profile_data, bench, str(n), 'summary', 'method.csv')
+        ) for n in os.listdir(os.path.join(profile_data, bench))])
         df['method'] = df.trace.str.split(';').str[0]
         df = df.groupby('method').energy.sum() * 8
 
@@ -168,14 +168,13 @@ def main():
         df = df.Oblivious / df.Aware
 
         ranking_plot(df.head(5))
-        plt.savefig(op.join('plots', bench, 'concurrency-awareness.pdf'.format(bench)), bbox_inches = 'tight')
+        plt.savefig(os.path.join(plots_path, bench, 'concurrency-awareness.pdf'.format(bench)), bbox_inches = 'tight')
         plt.title(bench, fontsize = 32)
         plt.close()
     s = pd.Series(data = summary, index = benchs)
     s.name = 'correlation'
     s.index.name = 'bench'
-    print(s)
-    s.to_csv(op.join('plots', 'awareness-correlation.csv'), header = True)
+    s.to_csv(os.path.join(plots_path, 'awareness-correlation.csv'), header = True)
 
 if __name__ == '__main__':
     main()

@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 
+import argparse
 import json
 import os
-import os.path as op
 
 from itertools import product
 
@@ -32,7 +32,6 @@ rates = {
     'xalan': 16
 }
 
-
 def energy_plot(df):
     ax = df.plot.bar(y = 'mean', yerr = 'std', stacked = True, edgecolor = 'black', width = 0.55, figsize = (16, 9), error_kw = dict(lw = 2, capsize = 10, capthick = 1))
 
@@ -45,21 +44,17 @@ def energy_plot(df):
     plt.xticks(fontsize = 20, rotation = 30)
     plt.yticks(fontsize = 24)
 
-
 def parse_timestamp(path):
     ts = np.sort([int(t) for t in json.load(open(path)).values()])
     return np.max(ts) - np.min(ts)
 
-
 _RAPL_WRAPAROUND = 16384
-
 
 def rapl_wrap_around(reading):
     if reading >= 0:
         return reading
     else:
         return max(reading + _RAPL_WRAPAROUND, 0)
-
 
 def parse_energy(path):
     energy = pd.read_csv(path, delimiter = ';')
@@ -75,7 +70,6 @@ def parse_energy(path):
 
     energy['energy'] = energy.sum(axis = 1)
     return energy.energy
-
 
 def filter_to_application_(trace):
     try:
@@ -104,7 +98,6 @@ def filter_to_application_(trace):
 
     return 'end'
 
-
 def filter_to_application(df):
     mask = (df.trace == 'end') | df.trace.str.contains('chappie') | df.trace.str.contains('jlibc') | df.trace.str.contains('jrapl')
     df = df[~mask]
@@ -114,17 +107,21 @@ def filter_to_application(df):
 
     return df
 
-
 def main():
-    if not op.exists('plots'):
-        os.mkdir('plots')
-    root = op.join('..', 'chappie-data', 'fse2020')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-work-directory')
+    args = parser.parse_args()
 
-    ref_dir = op.join(root, 'freq')
-    data_dir = op.join(root, 'profile')
-    file_from = lambda k: op.join('raw', str(k))
+    data_path = args.work_directory
+    plots_path = os.path.exists(data_path, 'plots')
+    if not os.path.exists(plots_path):
+        os.mkdir(plots_path)
 
-    benchs = np.sort(os.listdir(ref_dir))
+    calm_data = os.path.join(data_path, 'calm')
+    profile_data = os.path.join(data_path, 'profile')
+    file_from = lambda k: os.path.join('raw', str(k))
+
+    benchs = np.sort(os.listdir(calm_data))
     benchs = tqdm(benchs)
 
     summary = []
@@ -135,19 +132,19 @@ def main():
 
         a = 2; b = 10
 
-        ts = np.mean([parse_timestamp(op.join(root, 'freq', bench, 'raw', str(k), 'time.json')) / 1000000000 for k in range(a, b)])
-        total_threads = len(json.load(open(op.join(root, 'profile', bench, '0', 'raw', '0', 'id.json'))))
+        ts = np.mean([parse_timestamp(os.path.join(root, 'freq', bench, 'raw', str(k), 'time.json')) / 1000000000 for k in range(a, b)])
+        total_threads = len(json.load(open(os.path.join(root, 'profile', bench, '0', 'raw', '0', 'id.json'))))
         live_threads = np.mean([
-            pd.read_csv(op.join(
+            pd.read_csv(os.path.join(
                 root, 'profile', bench, n, 'raw', str(k), 'vm.csv'
             ), delimiter = ';').groupby('epoch').id.count().mean() for n, k in product(
-                os.listdir(op.join(root, 'profile', bench)), range(a, b)
+                os.listdir(os.path.join(root, 'profile', bench)), range(a, b)
         )])
 
-        methods = [pd.read_csv(op.join(
+        methods = [pd.read_csv(os.path.join(
             root, 'profile', bench, n, 'raw', str(k), 'method.csv'
         ), delimiter = ';').trace.str.split('@').tolist() for n, k in product(
-            os.listdir(op.join(root, 'profile', bench)), range(a, b)
+            os.listdir(os.path.join(root, 'profile', bench)), range(a, b)
         )]
         methods = len({m for iter in methods for stack in iter for m in stack})
 
@@ -159,7 +156,7 @@ def main():
         summary.append(s)
 
         df = pd.concat([
-            pd.read_csv(op.join(root, 'profile', bench, i, 'summary', 'component.csv')).assign(i = i) for i in os.listdir(op.join(root, 'profile', bench))
+            pd.read_csv(os.path.join(root, 'profile', bench, i, 'summary', 'component.csv')).assign(i = i) for i in os.listdir(os.path.join(root, 'profile', bench))
         ]).groupby(['socket', 'i']).sum().groupby('socket').agg(('mean', 'std')).stack(0).reset_index()
         df.columns = ['socket', 'component', 'mean', 'std']
         df['bench'] = bench
@@ -175,7 +172,7 @@ def main():
     df = df.reset_index().transform(lambda x: x.map('{} & '.format)).sum(axis = 1).str[:-1].map(lambda x: x[:-1] + ' \\\\\n')
     table = df.values
 
-    with open('plots/summary-table.tex', 'w') as f:
+    with open(os.path.join(plots_path, 'summary-table.tex'), 'w') as f:
         [f.write(row) for row in table]
 
     df = pd.concat(energy)
@@ -183,7 +180,7 @@ def main():
 
     energy_plot(df.unstack().unstack())
 
-    plt.savefig('plots/energy.pdf', bbox_inches = 'tight')
+    plt.savefig(os.path.join(plots_path, 'energy.pdf'), bbox_inches = 'tight')
     plt.close()
 
 

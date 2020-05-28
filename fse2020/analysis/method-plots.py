@@ -2,7 +2,6 @@
 
 import argparse
 import os
-import os.path as op
 
 from itertools import product
 from time import time
@@ -69,29 +68,37 @@ def get_n_contexts(df, n):
     return context
 
 def main():
-    if not op.exists('plots'):
-        os.mkdir('plots')
-    root = op.join('..', 'chappie-data', 'fse2020')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-work-directory')
+    args = parser.parse_args()
 
-    ref_dir = op.join(root, 'freq')
-    data_dir = op.join(root, 'profile')
-    file_from = lambda k: op.join('raw', str(k))
+    data_path = args.work_directory
+    plots_path = os.path.exists(data_path, 'plots')
+    if not os.path.exists(plots_path):
+        os.mkdir(plots_path)
 
-    benchs = np.sort(os.listdir(ref_dir))
+    calm_data = os.path.join(data_path, 'calm')
+    profile_data = os.path.join(data_path, 'profile')
+    file_from = lambda k: os.path.join('raw', str(k))
+
+    benchs = np.sort(os.listdir(calm_data))
+    benchs_ = tqdm(benchs)
+
+    benchs = np.sort(os.listdir(calm_data))
     benchs_ = tqdm(benchs)
 
     summary = []
     for bench in benchs_:
         benchs_.set_description(bench)
 
-        if not op.exists('plots/{}'.format(bench)):
-            os.mkdir('plots/{}'.format(bench))
+        if not os.path.exists(os.path.join(plots_path, bench)):
+            os.mkdir(os.path.join(plots_path, bench))
 
         a = 2; b = 10
 
         df = pd.concat([pd.read_csv(
-            op.join(data_dir, bench, str(n), 'summary', 'method.csv')
-        ).assign(batch = n) for n, k in product(os.listdir(op.join(data_dir, bench)), range(a, b))])
+            os.path.join(profile_data, bench, str(n), 'summary', 'method.csv')
+        ).assign(batch = n) for n, k in product(os.listdir(os.path.join(profile_data, bench)), range(a, b))])
 
         df['method_'] = df.trace.str.split(';').str[0]
 
@@ -103,22 +110,22 @@ def main():
 
         ranking['method'] = ranking.index.str.split('.').str[-2:].str.join('.')
         ranking_plot(ranking.set_index('method').sort_values(by = ['energy']), colors = [u'#d62728', u'#2ca02c'])
-        plt.savefig(op.join('plots', bench, 'method-ranking.pdf'.format(bench)), bbox_inches = 'tight')
+        plt.savefig(os.path.join(plots_path, bench, 'method-ranking.pdf'.format(bench)), bbox_inches = 'tight')
         plt.close()
 
         ranking['method'] = ranking.index.str.split('.').str[-2:].str.join('.')
         ranking_plot(ranking.set_index('method')[['energy']].sort_values(by = ['energy']), colors = u'#2ca02c')
-        plt.savefig(op.join('plots', bench, 'energy-method-ranking.pdf'.format(bench)), bbox_inches = 'tight')
+        plt.savefig(os.path.join(plots_path, bench, 'energy-method-ranking.pdf'.format(bench)), bbox_inches = 'tight')
         plt.close()
 
         ranking['class'] = ranking.index.str.split('.').str[-2]
         ranking_plot(ranking.groupby('class')[['energy']].sum().sort_values(by = ['energy']), colors = u'#2ca02c')
-        plt.savefig(op.join('plots', bench, 'class-ranking.pdf'.format(bench)), bbox_inches = 'tight')
+        plt.savefig(os.path.join(plots_path, bench, 'class-ranking.pdf'.format(bench)), bbox_inches = 'tight')
         plt.close()
 
         ranking['package'] = ranking.index.str.split('.').str[:-2].str.join('.')
         ranking_plot(ranking.groupby('package')[['energy']].sum().sort_values(by = ['energy']), colors = u'#2ca02c')
-        plt.savefig(op.join('plots', bench, 'package-ranking.pdf'.format(bench)), bbox_inches = 'tight')
+        plt.savefig(os.path.join(plots_path, bench, 'package-ranking.pdf'.format(bench)), bbox_inches = 'tight')
         plt.close()
 
         benchs_.set_description(bench + " - context")
@@ -143,7 +150,7 @@ def main():
             else:
                 ax.legend(context, fontsize = 10, ncol = int(np.ceil(len(df) / 30)))
 
-            plt.savefig(op.join('plots', bench, 'cfa2_{}.pdf'.format(i + 1)), bbox_inches = 'tight')
+            plt.savefig(os.path.join(plots_path, bench, 'cfa2_{}.pdf'.format(i + 1)), bbox_inches = 'tight')
             plt.close()
 
 if __name__ == '__main__':

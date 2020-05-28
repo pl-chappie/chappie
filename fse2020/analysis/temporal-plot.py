@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 
+import argparse
 import json
 import os
-import os.path as op
 
 from itertools import product
 
@@ -55,16 +55,21 @@ def bin_count(s, n):
     return size
 
 def main():
-    if not op.exists('plots'):
-        os.mkdir('plots')
-    root = op.join('..', 'chappie-data', 'fse2020')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-work-directory')
+    args = parser.parse_args()
 
-    ref_dir = op.join(root, 'freq')
-    data_dir = op.join(root, 'calmness')
+    data_path = args.work_directory
+    plots_path = os.path.exists(data_path, 'plots')
+    if not os.path.exists(plots_path):
+        os.mkdir(plots_path)
+
+    calm_data = os.path.join(data_path, 'calm')
+    profile_data = os.path.join(data_path, 'profile')
     freq_file = lambda k: op.join('raw', str(k), 'freqs.csv')
     file_from = lambda k: op.join('raw', str(k))
 
-    benchs = np.sort(os.listdir(ref_dir))
+    benchs = np.sort(os.listdir(calm_data))
     benchs = tqdm(benchs)
 
     summary = []
@@ -72,13 +77,12 @@ def main():
     for bench in benchs:
         benchs.set_description(bench + " - ref")
 
-        if not op.exists('plots/{}'.format(bench)):
-            os.mkdir('plots/{}'.format(bench))
-
+        if not os.path.exists(os.path.join(plots_path, bench)):
+            os.mkdir(os.path.join(plots_path, bench))
         a = 2; b = 10
 
         df = pd.concat([pd.read_csv(
-            op.join(ref_dir, bench, freq_file(k)),
+            op.join(calm_data, bench, freq_file(k)),
             delimiter = ';'
         ).assign(iter = k) for k in range(a, b)])
         df.freq /= 10000
@@ -90,15 +94,15 @@ def main():
         ref_ = df
 
         t_ref = [parse_timestamp(
-            op.join(ref_dir, bench, file_from(str(k)), 'time.json')
+            op.join(calm_data, bench, file_from(str(k)), 'time.json')
         ) for k in range(a, b)]
 
         dists = []
-        for rate in os.listdir(op.join(data_dir, bench)):
+        for rate in os.listdir(op.join(profile_data, bench)):
             benchs.set_description(bench + ' - ' + str(rate))
 
             t = [parse_timestamp(
-                op.join(data_dir, bench, str(rate), file_from(str(k)), 'time.json')
+                op.join(profile_data, bench, str(rate), file_from(str(k)), 'time.json')
             ) for k in range(a, b)]
 
             if not within_bounded_error(t, t_ref):
@@ -108,7 +112,7 @@ def main():
             ref = ref_.copy(deep = True)
 
             df = pd.concat([pd.read_csv(
-                op.join(data_dir, bench, str(rate), freq_file(k)),
+                op.join(profile_data, bench, str(rate), freq_file(k)),
                 delimiter = ';'
             ).assign(iter = k) for k in range(a, b)])
             df.epoch //= df.epoch.min()
@@ -160,7 +164,7 @@ def main():
             plt.xticks([])
             plt.yticks([])
 
-            plt.savefig('plots/{}/freq-temporal-{}ms.pdf'.format(bench, rate), bbox_inches = 'tight')
+            plt.savefig(os.path.join('plots'), bench, 'freq-temporal-{}ms.pdf'.format(rate), bbox_inches = 'tight')
             plt.close()
 
         ref = ref.to_frame().reset_index()
@@ -187,7 +191,7 @@ def main():
         plt.xticks([])
         plt.yticks([])
 
-        plt.savefig('plots/{}/freq-temporal-reference.pdf'.format(bench, rate), bbox_inches = 'tight')
+        plt.savefig(os.path.join('plots'), bench, 'freq-temporal-reference.pdf'.format(bench, rate), bbox_inches = 'tight')
         plt.close()
 
         df = pd.DataFrame(data = dists, columns = ['rate', 'correlation']).set_index('rate').sort_index()
@@ -195,7 +199,7 @@ def main():
 
     df = pd.concat(summary).set_index(['rate', 'bench']).correlation
     df = df.unstack()
-    df.to_csv('plots/temporal-correlation.csv')
+    df.to_csv(os.path.join(plots_path, 'temporal-correlation.csv'))
     print(df)
 
     df.index = df.index.astype(str)
@@ -215,7 +219,7 @@ def main():
     plt.xticks(fontsize = 40, rotation = 30)
     plt.yticks(fontsize = 40)
 
-    plt.savefig(op.join('plots', 'temporal-correlation.pdf'), bbox_inches = 'tight')
+    plt.savefig(op.join(plots_path, 'temporal-correlation.pdf'), bbox_inches = 'tight')
     plt.close()
 
 if __name__ == '__main__':
