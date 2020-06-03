@@ -31,6 +31,7 @@ benchs=(
   biojava
   jython
 )
+# size=default
 size=default
 
 for bench in ${benchs[@]}; do
@@ -41,7 +42,7 @@ rate=16
 benchs=(
   xalan
 )
-size=default
+# size=default
 
 for bench in ${benchs[@]}; do
   run_profiling_experiment
@@ -51,7 +52,7 @@ rate=128
 benchs=(
   avrora
 )
-size=large
+# size=large
 
 for bench in ${benchs[@]}; do
   run_profiling_experiment
@@ -61,7 +62,7 @@ rate=8
 benchs=(
   batik
 )
-size=large
+# size=large
 
 for bench in ${benchs[@]}; do
   run_profiling_experiment
@@ -75,7 +76,7 @@ benchs=(
   sunflow
   tomcat
 )
-size=large
+# size=large
 
 for bench in ${benchs[@]}; do
   run_profiling_experiment
@@ -85,7 +86,7 @@ rate=16
 benchs=(
   graphchi
 )
-size=huge
+# size=huge
 
 for bench in ${benchs[@]}; do
   run_profiling_experiment

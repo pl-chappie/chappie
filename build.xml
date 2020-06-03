@@ -51,11 +51,13 @@
 		>
 			<classpath refid="deps.jars"/>
 		</javac>
-		<copy file="src/java/jrapl-port/classes/libCPUScaler.so" todir="build/classes/jrapl"/>
-		<copy file="vendor/async-profiler/build/libasyncProfiler.so" todir="build/"/>
 	</target>
 
   <target name="jar" depends="compile">
+		<copy file="src/java/jrapl-port/classes/libCPUScaler.so" todir="build/classes/jrapl"/>
+		<copy file="vendor/async-profiler/build/libasyncProfiler.so" todir="build/"/>
+		<copy file="vendor/jlibc/target/jlibc-snapshot-jar-with-dependencies.jar" todir="dependencies"/>
+		<copy file="vendor/async-profiler/async-profiler.jar" todir="dependencies"/>
 		<jar jarfile="${runtime.jar}" basedir="${build.classes.dir}" manifest="manifest.txt">
 			<zipgroupfileset dir="dependencies" includes="*.jar"/>
 		</jar>

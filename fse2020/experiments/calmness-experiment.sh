@@ -34,7 +34,7 @@ mkdir $calm_data_root
 profile_data_root=$data_root/profile
 mkdir $profile_data_root
 
-iters=1
+iters=4
 rates=(0 1 2 4 8 16 32 64 128 256 512)
 size=default
 
