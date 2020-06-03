@@ -1,13 +1,14 @@
 #!/bin/bash
 
 dir=`dirname "$0"`
+data_dir=$dir/../fse2020-test
+# data_dir=~/chappie-data
+mkdir $data_dir
 
-if [ $1 -z ]; then
-  work_dir='chappie-logs'
-elif
-  work_dir=$1
-fi
+# calmness experiment
+$dir/experiments/calmness-experiment.sh $data_dir
+python3 $dir/experiments/calmness-check.py -d $data_dir
 
-$dir/experiments/calmness-experiment.sh $work_dir
-$dir/experiments/profile-experiment.sh $work_dir
-$dir/data-processing.sh $work_dir/profile
+# profile experiment
+$dir/experiments/profile-experiment.sh $data_dir
+python3 $dir/experiments/convergence-check.py -d $data_dir

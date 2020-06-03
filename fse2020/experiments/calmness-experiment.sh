@@ -10,20 +10,22 @@ function run_calmness_experiment {
       mkdir $work_dir
       $dacapo_command $work_dir "-Dchappie.rate=0" $bench "--size $size --iterations $iters"
     else
-      work_dir=${profile_data_root}/${bench}/${rate}/base
+      work_dir=${profile_data_root}/${bench}/${rate}
       rm -rf $work_dir
       mkdir $work_dir
       freq_rate=$((512 / $rate))
-      $dacapo_command $work_dir "-Dchappie.rate=$rate -Dchappie.os=0 -Dchappie.freq=$freq_rate" $bench "--size $size --iterations $iters"
+      $dacapo_command $work_dir "-Dchappie.rate=$rate -Dchappie.freq=$freq_rate" $bench "--size $size --iterations $iters"
     fi
   done
 }
 
-chappie_root=$(realpath `dirname "$0"`)/../..
-experiment_root=$chappie_root/experiments
+experiment_root=$(realpath `dirname "$0"`)
+chappie_root=$experiment_root/../..
 dacapo_command=$experiment_root/dacapo.sh
 
 data_root=$1
+mkdir $data_root
+data_root=$data_root/calmness
 mkdir $data_root
 
 calm_data_root=$data_root/calm
@@ -32,15 +34,16 @@ mkdir $calm_data_root
 profile_data_root=$data_root/profile
 mkdir $profile_data_root
 
-iters=10
+iters=1
 rates=(0 1 2 4 8 16 32 64 128 256 512)
+size=default
 
 benchs=(
   biojava
   jython
   xalan
 )
-size=default
+# size=default
 
 for bench in ${benchs[@]}; do
   run_calmness_experiment
@@ -55,7 +58,7 @@ benchs=(
   sunflow
   tomcat
 )
-size=large
+# size=large
 
 for bench in ${benchs[@]}; do
   run_calmness_experiment
@@ -64,7 +67,7 @@ done
 benchs=(
   graphchi
 )
-size=huge
+# size=huge
 
 for bench in ${benchs[@]}; do
   run_calmness_experiment

@@ -1,25 +1,31 @@
 #!/bin/bash
 
 function run_profiling_experiment {
-  mkdir ${data}/${bench}
+  mkdir ${data_root}/${bench}
+  ln -s $(realpath $ref_data/${bench}/${rate}) ${data_root}/${bench}/0
+  python3 $chappie_root/src/python/analysis --work-directory ${data_root}/${bench}/0
   for i in `seq 1 $cold_iters`; do
     work_dir=${data_root}/${bench}/${i}
     rm -rf $work_dir
     mkdir $work_dir
     $dacapo_command $work_dir "-Dchappie.rate=$rate" $bench "--size $size --iterations $hot_iters"
+    python3 $chappie_root/src/python/analysis --work-directory $work_dir
   done
 }
 
-chappie_root=$(realpath `dirname "$0"`)/../..
-experiment_root=$chappie_root/experiments
+experiment_root=$(realpath `dirname "$0"`)
+chappie_root=$experiment_root/../..
 dacapo_command=$experiment_root/dacapo.sh
 
-data_root=$1/profile
+data_root=$1
+mkdir $data_root
+ref_data=$data_root/calmness/profile
+data_root=$data_root/profiling
 mkdir $data_root
 
-hot_iters=10
+hot_iters=4
 
-cold_iters=4
+cold_iters=3
 rate=8
 benchs=(
   biojava
