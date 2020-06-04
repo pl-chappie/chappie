@@ -34,8 +34,10 @@ mkdir $calm_data_root
 profile_data_root=$data_root/profile
 mkdir $profile_data_root
 
-iters=10
-rates=(1 0 2 4 8 16 32 64 128 256 512)
+# iters=10
+# rates=(0 1 2 4 8 16 32 64 128 256 512)
+iters=3
+rates=(0 8 32 128 512)
 
 cases=$(cat $chappie_root/fse2020/experiment-sizes.txt)
 set -f; IFS=$'\n'

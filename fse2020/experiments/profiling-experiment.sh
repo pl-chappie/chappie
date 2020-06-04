@@ -27,9 +27,11 @@ ref_data=$data_root/calmness/profile
 data_root=$data_root/profiling
 mkdir $data_root
 
-threshold=0.98
-hot_iters=10
-cold_iters=10
+threshold=0.90
+# hot_iters=10
+# cold_iters=10
+hot_iters=3
+cold_iters=3
 
 cases=$(cat $1/.calm-rates)
 set -f; IFS=$'\n'
