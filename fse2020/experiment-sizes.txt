@@ -1,3 +1,3 @@
-batik small
-jython small
-sunflow small
+batik default
+eclipse default
+sunflow default
