@@ -16,20 +16,6 @@ import pandas as pd
 
 from tqdm import tqdm
 
-rates = {
-    'avrora': 128,
-    'batik': 8,
-    'biojava': 8,
-    'eclipse': 16,
-    'graphchi': 16,
-    'h2': 32,
-    'jython': 8,
-    'pmd': 16,
-    'sunflow': 16,
-    'tomcat': 16,
-    'xalan': 16
-}
-
 def parse_timestamp(path):
     ts = np.sort([int(t) for t in json.load(open(path)).values()])
     return (np.max(ts) - np.min(ts)) / 1000000000
@@ -60,12 +46,16 @@ def main():
     args = parser.parse_args()
 
     data_path = args.work_directory
-    plots_path = os.path.exists(data_path, 'plots')
+    plots_path = os.path.join(data_path, 'plots')
     if not os.path.exists(plots_path):
         os.mkdir(plots_path)
 
-    calm_data = os.path.join(data_path, 'calm')
-    profile_data = os.path.join(data_path, 'profile')
+    rates = pd.read_csv(os.path.join(data_path, 'summary', 'calm-rates.txt'), delimiter = ' ', header = None)
+    rates.columns = ['bench', 'size', 'rate']
+    rates = rates.set_index('bench').rate.to_dict()
+
+    calm_data = os.path.join(data_path, 'calmness', 'calm')
+    profile_data = os.path.join(data_path, 'calmness', 'profile')
     file_from = lambda k: os.path.join('raw', str(k))
 
     benchs = np.sort(os.listdir(calm_data))
@@ -78,15 +68,16 @@ def main():
 
         if not os.path.exists(os.path.join(plots_path, bench)):
             os.mkdir(os.path.join(plots_path, bench))
-        a = 2; b = 10
+        runs = np.sort(os.listdir(os.path.join(calm_data, bench, 'raw')))
+        runs = runs[(len(runs) // 5):]
 
         e = [parse_energy(
             os.path.join(calm_data, bench, file_from(str(k)), 'energy.csv')
-        ) for k in range(a, b)]
+        ) for k in runs]
 
         t = [parse_timestamp(
             os.path.join(calm_data, bench, file_from(str(k)), 'time.json')
-        ) for k in range(a, b)]
+        ) for k in runs]
 
         ref = {
             'e_m': np.mean(e),
@@ -103,11 +94,11 @@ def main():
 
             e = [parse_energy(
                 os.path.join(profile_data, bench, rate, file_from(str(k)), 'energy.csv')
-            ) for k in range(a, b)]
+            ) for k in runs]
 
             t = [parse_timestamp(
                 os.path.join(profile_data, bench, rate, file_from(str(k)), 'time.json')
-            ) for k in range(a, b)]
+            ) for k in runs]
 
             d = {
                 'e_m': np.mean(e) / ref['e_m'],
@@ -132,7 +123,6 @@ def main():
         df.index = df.index.astype(int)
         df.columns = pd.MultiIndex.from_tuples(product(('mean', 'std'), ('energy', 'time', 'power')))
 
-        df = df[df.index <= 64]
         ax = df.plot.bar(
             y = 'mean',
             yerr = 'std',

@@ -9,6 +9,34 @@ import pandas as pd
 
 from tqdm import tqdm
 
+# bench_sizes = {
+#     'biojava': 'default',
+#     'jython': 'default',
+#     'xalan': 'default',
+#     'avrora': 'large',
+#     'batik': 'large',
+#     'eclipse': 'large',
+#     'h2': 'large',
+#     'pmd': 'large',
+#     'sunflow': 'large',
+#     'tomcat': 'large',
+#     'graphchi': 'huge',
+# }
+
+bench_sizes = {
+    'biojava': 'default',
+    'jython': 'default',
+    'xalan': 'default',
+    'avrora': 'default',
+    'batik': 'default',
+    'eclipse': 'default',
+    'h2': 'default',
+    'pmd': 'default',
+    'sunflow': 'default',
+    'tomcat': 'default',
+    'graphchi': 'default',
+}
+
 def parse_timestamp(path):
     ts = np.sort([int(t) for t in json.load(open(path)).values()])
     return (np.max(ts) - np.min(ts)) / 100000000000
@@ -18,7 +46,7 @@ def parse_runtime(path, runs):
     return {'mean': np.mean(t), 'std': np.std(t)}
 
 def parse_freqs(path, runs):
-    df = pd.concat([pd.read_csv(path(run), delimiter = ';').assign(run = run) for run in runs])
+    df = pd.concat([pd.read_csv(path(run), delimiter = ';').assign(run = int(run)) for run in runs])
     df.freq /= 10000
     df.freq = df.freq.astype(int)
 
@@ -26,11 +54,6 @@ def parse_freqs(path, runs):
     df.epoch = df.epoch.round(0).astype(int)
 
     return df
-
-def within_bounded_error(t, ref):
-    lower = t['mean'] >= 0.95 * ref['mean'] and t['mean'] <= 1.05 * ref['mean']
-    upper = t['mean'] <= ref['mean'] + 2 * ref['std'] and t['mean'] >= ref['mean'] - 2 * ref['std']
-    return lower or upper
 
 def time_calmness(t, ref):
     return {
@@ -64,7 +87,7 @@ def main():
 
     df = []
     for bench in benchs:
-        idx = ('benchmark', 'rate', 'runtime', 'runtime_std', 'temporal', 'temporal_err', 'temporal_rms', 'spatial', 'spatial_err', 'spatial_rms')
+        idx = ('benchmark', 'size', 'rate', 'runtime', 'runtime_std', 'temporal', 'temporal_err', 'temporal_rms', 'spatial', 'spatial_err', 'spatial_rms')
 
         runs = np.sort(os.listdir(os.path.join(calm_data, bench, 'raw')))
         runs = runs[(len(runs) // 5):]
@@ -122,22 +145,24 @@ def main():
             sc['err'] = np.sqrt((1 - sc['corr'] ** 2) / (len(f) - 2))
             sc['rms'] = np.sqrt(((f.min() - f.max())**2).sum() / len(f))
 
-            df.append(pd.Series(index = idx, data = (bench, rate, t['mean'], t['std'], tc['corr'], tc['err'], tc['rms'], sc['corr'], sc['err'], sc['rms'])))
+            df.append(pd.Series(index = idx, data = (bench, bench_sizes[bench], int(rate), t['mean'], t['std'], tc['corr'], tc['err'], tc['rms'], sc['corr'], sc['err'], sc['rms'])))
 
     summary_path = os.path.join(args.data_directory, 'summary')
     if not os.path.exists(summary_path):
         os.mkdir(summary_path)
 
-    df = pd.concat(df, axis = 1).T.set_index(['benchmark', 'rate'])
-    df.to_csv(os.path.join(metadata_path, 'calmness.csv'))
-    print(df)
+    df = pd.concat(df, axis = 1).T.set_index(['benchmark', 'size', 'rate']).sort_index()
+    df.to_csv(os.path.join(summary_path, 'calmness.csv'))
 
-    metadata_path = os.path.join(args.data_directory, 'metadata')
-    if not os.path.exists(metadata_path):
-        os.mkdir(metadata_path)
-
-    rates = df[(abs(df.runtime) < 0.05) & (df.temporal > 0.85) & (df.spatial > 0.85)]
-    print(rates)
+    rates = df.reset_index()
+    optimal_rates = rates[((abs(rates.runtime) < 0.05) | (abs(rates.runtime) <= 2 * rates.runtime_std)) & (rates.temporal > 0.85) & (rates.spatial > 0.85)]
+    optimal_rates = optimal_rates[optimal_rates.groupby('benchmark').rate.apply(lambda x: x == x.min())]
+    lowest_rates = rates[rates.groupby('benchmark').rate.apply(lambda x: x == x.min()) & ~rates.benchmark.isin(optimal_rates.benchmark)]
+    rates = pd.concat([optimal_rates, lowest_rates]).set_index('benchmark').sort_index().reset_index()
+    f = open(os.path.join(summary_path, 'calm-rates.txt'), 'w')
+    for bench, size, rate in rates[['benchmark', 'size', 'rate']].values:
+        f.write(' '.join([bench, size, str(rate)]) + '\n')
+    f.close()
 
 if __name__ == '__main__':
     main()

@@ -111,12 +111,12 @@ def main():
     args = parser.parse_args()
 
     data_path = args.work_directory
-    plots_path = os.path.exists(data_path, 'plots')
+    plots_path = os.path.join(data_path, 'plots')
     if not os.path.exists(plots_path):
         os.mkdir(plots_path)
 
-    calm_data = os.path.join(data_path, 'calm')
-    profile_data = os.path.join(data_path, 'profile')
+    calm_data = os.path.join(data_path, 'calmness', 'calm')
+    profile_data = os.path.join(data_path, 'profiling')
     file_from = lambda k: os.path.join('raw', str(k))
 
     benchs = np.sort(os.listdir(calm_data))
@@ -128,23 +128,23 @@ def main():
 
         if not os.path.exists(os.path.join(plots_path, bench)):
             os.mkdir(os.path.join(plots_path, bench))
-
-        a = 2; b = 10
+        runs = np.sort(os.listdir(os.path.join(calm_data, bench, 'raw')))
+        runs = runs[(len(runs) // 5):]
 
         df = pd.concat([pd.read_csv(
             os.path.join(profile_data, bench, str(n), file_from(k), 'method.csv'),
             delimiter = ';'
-        ).assign(iter = k) for n, k in product(os.listdir(os.path.join(profile_data, bench)), range(a, b))])
+        ).assign(iter = k) for n, k in product(os.listdir(os.path.join(profile_data, bench)), runs)])
         df.timestamp //= 1000000
 
         id = [{int(k): int(v) for k, v in json.load(open(
             os.path.join(profile_data, bench, str(n), file_from(k), 'time.json'))
-        ).items()} for n, k in product(os.listdir(os.path.join(profile_data, bench)), range(a, b))]
+        ).items()} for n, k in product(os.listdir(os.path.join(profile_data, bench)), runs)]
 
         energy = pd.concat([parse_energy(
             os.path.join(profile_data, bench, str(n), file_from(k), 'energy.csv'),
             i
-        ) for (n, k), i in zip(product(os.listdir(os.path.join(profile_data, bench)), range(a, b)), id)])
+        ) for (n, k), i in zip(product(os.listdir(os.path.join(profile_data, bench)), runs), id)])
 
         df = pd.merge(df, energy, on = 'timestamp', how = 'left').dropna(subset = [0])
         df = filter_to_application(df)
@@ -161,16 +161,18 @@ def main():
         df = pd.concat([df, obliv], axis = 1).dropna()
         df.columns = ['Aware', 'Oblivious']
         df = df.sort_values(by = ['Aware'], ascending = False)
-        df.index = df.index.str.split('.').str[-2:].str.join('.')
+        if len(df) > 0:
+            df.index = df.index.str.split('.').str[-2:].str.join('.')
+            summary.append(df.corr().iloc[0, 1])
 
-        summary.append(df.corr().iloc[0, 1])
+            df = df.Oblivious / df.Aware
 
-        df = df.Oblivious / df.Aware
-
-        ranking_plot(df.head(5))
-        plt.savefig(os.path.join(plots_path, bench, 'concurrency-awareness.pdf'.format(bench)), bbox_inches = 'tight')
-        plt.title(bench, fontsize = 32)
-        plt.close()
+            ranking_plot(df.head(5))
+            plt.savefig(os.path.join(plots_path, bench, 'concurrency-awareness.pdf'.format(bench)), bbox_inches = 'tight')
+            plt.title(bench, fontsize = 32)
+            plt.close()
+        else:
+            summary.append(np.nan)
     s = pd.Series(data = summary, index = benchs)
     s.name = 'correlation'
     s.index.name = 'bench'

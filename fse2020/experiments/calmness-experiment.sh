@@ -19,9 +19,9 @@ function run_calmness_experiment {
   done
 }
 
-experiment_root=$(realpath `dirname "$0"`)
-chappie_root=$experiment_root/../..
-dacapo_command=$experiment_root/dacapo.sh
+dir=$(realpath `dirname "$0"`)
+chappie_root=$dir/../..
+dacapo_command=$dir/dacapo.sh
 
 data_root=$1
 mkdir $data_root
@@ -34,41 +34,17 @@ mkdir $calm_data_root
 profile_data_root=$data_root/profile
 mkdir $profile_data_root
 
-iters=4
-rates=(0 1 2 4 8 16 32 64 128 256 512)
-size=default
+# iters=10
+# rates=(0 1 2 4 8 16 32 64 128 256 512)
+iters=3
+rates=(0 8 16 32 64)
 
-benchs=(
-  biojava
-  jython
-  xalan
-)
-# size=default
+cases=$(cat $chappie_root/fse2020/experiment-sizes.txt)
+set -f; IFS=$'\n'
+set +f;
 
-for bench in ${benchs[@]}; do
-  run_calmness_experiment
-done
-
-benchs=(
-  avrora
-  batik
-  eclipse
-  h2
-  pmd
-  sunflow
-  tomcat
-)
-# size=large
-
-for bench in ${benchs[@]}; do
-  run_calmness_experiment
-done
-
-benchs=(
-  graphchi
-)
-# size=huge
-
-for bench in ${benchs[@]}; do
+for case in ${cases[@]}; do
+  bench=${case%%' '*}
+  size=${case#*' '}
   run_calmness_experiment
 done

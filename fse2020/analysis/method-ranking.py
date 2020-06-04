@@ -73,16 +73,13 @@ def main():
     args = parser.parse_args()
 
     data_path = args.work_directory
-    plots_path = os.path.exists(data_path, 'plots')
+    plots_path = os.path.join(data_path, 'plots')
     if not os.path.exists(plots_path):
         os.mkdir(plots_path)
 
-    calm_data = os.path.join(data_path, 'calm')
-    profile_data = os.path.join(data_path, 'profile')
+    calm_data = os.path.join(data_path, 'calmness', 'calm')
+    profile_data = os.path.join(data_path, 'profiling')
     file_from = lambda k: os.path.join('raw', str(k))
-
-    benchs = np.sort(os.listdir(calm_data))
-    benchs_ = tqdm(benchs)
 
     benchs = np.sort(os.listdir(calm_data))
     benchs_ = tqdm(benchs)
@@ -93,12 +90,12 @@ def main():
 
         if not os.path.exists(os.path.join(plots_path, bench)):
             os.mkdir(os.path.join(plots_path, bench))
-
-        a = 2; b = 10
+        runs = np.sort(os.listdir(os.path.join(calm_data, bench, 'raw')))
+        runs = runs[(len(runs) // 5):]
 
         df = pd.concat([pd.read_csv(
             os.path.join(profile_data, bench, str(n), 'summary', 'method.csv')
-        ).assign(batch = n) for n, k in product(os.listdir(os.path.join(profile_data, bench)), range(a, b))])
+        ).assign(batch = n) for n, k in product(os.listdir(os.path.join(profile_data, bench)), runs)])
 
         df['method_'] = df.trace.str.split(';').str[0]
 
@@ -109,7 +106,7 @@ def main():
         ranking.time = ranking.time / ranking.time.sum()
 
         ranking['method'] = ranking.index.str.split('.').str[-2:].str.join('.')
-        ranking_plot(ranking.set_index('method').sort_values(by = ['energy']), colors = [u'#d62728', u'#2ca02c'])
+        ranking_plot(ranking.set_index('method').sort_values(by = ['energy'])[['time', 'energy']], colors = [u'#d62728', u'#2ca02c'])
         plt.savefig(os.path.join(plots_path, bench, 'method-ranking.pdf'.format(bench)), bbox_inches = 'tight')
         plt.close()
 

@@ -52,7 +52,7 @@ def calmness_plot(df, color = 'blue', label = None):
         figsize = (25, 10),
     )
 
-    ax.set_xlim(-0.5, 9.5)
+    ax.set_xlim(-0.5, len(df) - 0.5)
 
     plt.xlabel('Sampling Rate (ms)', fontsize = 20)
     if label is None:
@@ -69,12 +69,12 @@ def main():
     args = parser.parse_args()
 
     data_path = args.work_directory
-    plots_path = os.path.exists(data_path, 'plots')
+    plots_path = os.path.join(data_path, 'plots')
     if not os.path.exists(plots_path):
         os.mkdir(plots_path)
 
-    calm_data = os.path.join(data_path, 'calm')
-    profile_data = os.path.join(data_path, 'profile')
+    calm_data = os.path.join(data_path, 'calmness', 'calm')
+    profile_data = os.path.join(data_path, 'calmness', 'profile')
     file_from = lambda k: os.path.join('raw', str(k))
 
     benchs = np.sort(os.listdir(calm_data))
@@ -86,7 +86,8 @@ def main():
 
         if not os.path.exists(os.path.join(plots_path, bench)):
             os.mkdir(os.path.join(plots_path, bench))
-        a = 2; b = 10
+        runs = np.sort(os.listdir(os.path.join(calm_data, bench, 'raw')))
+        runs = runs[(len(runs) // 5):]
 
         df = []
         for rate in os.listdir(os.path.join(profile_data, bench)):
@@ -94,11 +95,11 @@ def main():
 
             e = [parse_energy(
                 os.path.join(profile_data, bench, rate, file_from(k), 'energy.csv')
-            ) for k in range(a, b)]
+            ) for k in runs]
 
             t = [parse_timestamp(
                 os.path.join(profile_data, bench, rate, file_from(k), 'time.json')
-            ) for k in range(a, b)]
+            ) for k in runs]
 
             d = {
                 'e_m': np.mean(e),
@@ -123,11 +124,12 @@ def main():
 
         for col, color, label in zip(['energy', 'runtime', 'power'], [u'#2ca02c', u'#d62728', u'#1f77b4'], ['Energy (J)', 'Runtime (s)', 'Power (W)']):
             calmness_plot(df[col], color, label)
-            plt.savefig(os.path.join('plots', bench, '{}.pdf'.format(col)), bbox_inches = 'tight')
+            plt.savefig(os.path.join(plots_path, bench, '{}.pdf'.format(col)), bbox_inches = 'tight')
             plt.close()
 
     df = pd.concat(summary).reset_index().set_index(['rate', 'benchmark'])['mean'].unstack()
     df.index = df.index.astype(str)
+    print(df)
 
     ax = df.plot.line(
         style = ['o-', 's-', 'D-', 'h-', 'v-', 'P-', '^-', 'H-', '<-', '*-', '>-', 'X-', 'd-'],
@@ -135,7 +137,7 @@ def main():
         figsize = (25, 10)
     )
 
-    ax.set_xlim(-0.5, 9.5)
+    ax.set_xlim(-0.5, len(df) - 0.5)
 
     plt.legend(loc = 'upper right', fontsize = 20)
 
@@ -145,7 +147,7 @@ def main():
     plt.xticks(fontsize = 40, rotation = 30)
     plt.yticks(fontsize = 40)
 
-    plt.savefig(os.path.join(plots_root, 'runtime.pdf'), bbox_inches = 'tight')
+    plt.savefig(os.path.join(plots_path, 'runtime.pdf'), bbox_inches = 'tight')
     plt.close()
 
 if __name__ == '__main__':

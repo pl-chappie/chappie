@@ -16,22 +16,6 @@ import pandas as pd
 
 from tqdm import tqdm
 
-rates = {
-    'avrora': 128,
-    'batik': 8,
-    'biojava': 8,
-    'eclipse': 16,
-    'fop10': 4,
-    'graphchi': 16,
-    'h2': 32,
-    'jme10': 128,
-    'jython': 8,
-    'pmd': 16,
-    'sunflow': 16,
-    'tomcat': 16,
-    'xalan': 16
-}
-
 def energy_plot(df):
     ax = df.plot.bar(y = 'mean', yerr = 'std', stacked = True, edgecolor = 'black', width = 0.55, figsize = (16, 9), error_kw = dict(lw = 2, capsize = 10, capthick = 1))
 
@@ -113,12 +97,13 @@ def main():
     args = parser.parse_args()
 
     data_path = args.work_directory
-    plots_path = os.path.exists(data_path, 'plots')
+    plots_path = os.path.join(data_path, 'plots')
     if not os.path.exists(plots_path):
         os.mkdir(plots_path)
 
-    calm_data = os.path.join(data_path, 'calm')
-    profile_data = os.path.join(data_path, 'profile')
+    calm_data = os.path.join(data_path, 'calmness', 'calm')
+    profile_data = os.path.join(data_path, 'calmness', 'profile')
+    profiling_data = os.path.join(data_path, 'profiling')
     file_from = lambda k: os.path.join('raw', str(k))
 
     benchs = np.sort(os.listdir(calm_data))
@@ -129,22 +114,22 @@ def main():
 
     for bench in benchs:
         benchs.set_description(bench)
+        runs = np.sort(os.listdir(os.path.join(calm_data, bench, 'raw')))
+        runs = runs[(len(runs) // 5):]
 
-        a = 2; b = 10
-
-        ts = np.mean([parse_timestamp(os.path.join(root, 'freq', bench, 'raw', str(k), 'time.json')) / 1000000000 for k in range(a, b)])
-        total_threads = len(json.load(open(os.path.join(root, 'profile', bench, '0', 'raw', '0', 'id.json'))))
+        ts = np.mean([parse_timestamp(os.path.join(calm_data, bench, 'raw', str(k), 'time.json')) / 1000000000 for k in runs])
+        total_threads = len(json.load(open(os.path.join(profiling_data, bench, '0', 'raw', '0', 'id.json'))))
         live_threads = np.mean([
             pd.read_csv(os.path.join(
-                root, 'profile', bench, n, 'raw', str(k), 'vm.csv'
+                profiling_data, bench, n, 'raw', str(k), 'vm.csv'
             ), delimiter = ';').groupby('epoch').id.count().mean() for n, k in product(
-                os.listdir(os.path.join(root, 'profile', bench)), range(a, b)
+                os.listdir(os.path.join(profiling_data, bench)), runs
         )])
 
         methods = [pd.read_csv(os.path.join(
-            root, 'profile', bench, n, 'raw', str(k), 'method.csv'
+            profiling_data, bench, n, 'raw', str(k), 'method.csv'
         ), delimiter = ';').trace.str.split('@').tolist() for n, k in product(
-            os.listdir(os.path.join(root, 'profile', bench)), range(a, b)
+            os.listdir(os.path.join(profiling_data, bench)), runs
         )]
         methods = len({m for iter in methods for stack in iter for m in stack})
 
@@ -156,7 +141,7 @@ def main():
         summary.append(s)
 
         df = pd.concat([
-            pd.read_csv(os.path.join(root, 'profile', bench, i, 'summary', 'component.csv')).assign(i = i) for i in os.listdir(os.path.join(root, 'profile', bench))
+            pd.read_csv(os.path.join(profiling_data, bench, i, 'summary', 'component.csv')).assign(i = i) for i in os.listdir(os.path.join(profiling_data, bench))
         ]).groupby(['socket', 'i']).sum().groupby('socket').agg(('mean', 'std')).stack(0).reset_index()
         df.columns = ['socket', 'component', 'mean', 'std']
         df['bench'] = bench
