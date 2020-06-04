@@ -20,8 +20,6 @@ def cfa(path):
     method /= method.groupby('method').sum()
 
     for i, (m, df) in enumerate(method.reset_index().groupby('method')):
-        print(m)
-
         ax = df.plot(kind = 'pie', x = 'context', y = 'energy', wedgeprops = {'edgecolor': 'k', 'linewidth': 1}, labels = None, figsize = (24, 16))
 
         plt.title(m, fontsize = 72)

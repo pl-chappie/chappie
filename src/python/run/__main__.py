@@ -19,11 +19,10 @@ def parse_args():
     group = parser.add_mutually_exclusive_group()
 
     group.add_argument('-cp', '--classpath')
-    # this is just used for my testing
+    # this is just used for testing
     group.add_argument('--config')
 
     args, _ = parser.parse_known_args()
-    # async_rate = args.async_rate
 
     if args.classpath is None and args.config is None:
         if not os.path.exists(os.path.join(args.work_directory, 'config.json')):
@@ -46,7 +45,6 @@ def parse_args():
     if args.config is not None:
         config = json.load(open(args.config))
         config['work_directory'] = args.work_directory
-        # config['async_rate'] = async_rate
 
         json.dump(config, open(os.path.join(args.work_directory, 'config.json'), 'w'))
 
@@ -56,7 +54,6 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('-d', '--work-directory', default = 'chappie-logs')
-    # parser.add_argument('--async-rate', default = 4000000)
 
     parser.add_argument('-cp')
 
@@ -81,7 +78,6 @@ def parse_args():
         'main': java_main,
         'args': app_args,
         'work_directory': args.work_directory,
-        # 'async_rate': async_rate
     }
 
     json.dump(config, open(os.path.join(args.work_directory, 'config.json'), 'w'))

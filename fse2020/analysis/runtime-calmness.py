@@ -129,7 +129,6 @@ def main():
 
     df = pd.concat(summary).reset_index().set_index(['rate', 'benchmark'])['mean'].unstack()
     df.index = df.index.astype(str)
-    print(df)
 
     ax = df.plot.line(
         style = ['o-', 's-', 'D-', 'h-', 'v-', 'P-', '^-', 'H-', '<-', '*-', '>-', 'X-', 'd-'],

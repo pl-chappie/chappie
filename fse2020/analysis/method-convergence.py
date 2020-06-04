@@ -76,7 +76,6 @@ def main():
     df.batches = df.batches.astype(int)
     df['rate'] = df.index.map(rates)
     df = df[['rate', 'batches', 'pcc', 'pcc_err', 'rmse']]
-    print(df)
 
     df.index = df.index.map(lambda x: r'\texttt{' + x + '}')
     df = df.reset_index().transform(lambda x: x.map('{} & '.format)).sum(axis = 1).str[:-1].map(lambda x: x[:-1] + ' \\\\\n')

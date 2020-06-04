@@ -152,7 +152,6 @@ def main():
     df = pd.concat(summary)
     df = df[df.index == df.bench.map(rates)].reset_index().set_index(['bench', 'rate']).round(4)
     df['mean'].to_csv(os.path.join(plots_path, 'overhead.csv'))
-    print(df)
 
 if __name__ == '__main__':
     main()

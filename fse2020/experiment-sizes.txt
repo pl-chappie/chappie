@@ -1,1 +1,10 @@
-graphchi huge
+biojava default
+jython default
+xalan default
+avrora large
+batik large
+eclipse large
+h2 large
+pmd large
+sunflow large
+tomcat large

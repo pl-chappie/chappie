@@ -23,9 +23,7 @@ dir=$(realpath `dirname "$0"`)
 chappie_root=$dir/../..
 dacapo_command=$dir/dacapo.sh
 
-data_root=$1
-mkdir $data_root
-data_root=$data_root/calmness
+data_root=$1/calmness
 mkdir $data_root
 
 calm_data_root=$data_root/calm
@@ -34,10 +32,8 @@ mkdir $calm_data_root
 profile_data_root=$data_root/profile
 mkdir $profile_data_root
 
-# iters=10
-# rates=(0 1 2 4 8 16 32 64 128 256 512)
-iters=1
-rates=(0 8)
+iters=10
+rates=(0 1 2 4 8 16 32 64 128 256 512)
 
 cases=$(cat $chappie_root/fse2020/experiment-sizes.txt)
 set -f; IFS=$'\n'

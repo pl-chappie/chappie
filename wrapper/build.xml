@@ -25,7 +25,7 @@
 	</target>
 
 	<target name="deps" depends="setup" description="fetch deps">
-		<get src="https://sourceforge.net/projects/dacapobench/files/evaluation/dacapo-evaluation-git%2B309e1fa.jar" dest="${deps.dir}/dacapo-evaluation-git.jar"/>
+		<get src="https://dacapo-data.s3.amazonaws.com/dacapo-evaluation-git.jar" dest="${deps.dir}/dacapo-evaluation-git.jar"/>
 	</target>
 
 	<path id="project.class.path">

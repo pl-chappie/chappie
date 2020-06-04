@@ -48,7 +48,6 @@ def align_state(vm, jiff):
     if not mapped.empty:
         tid = align_by_tid(mapped, jiff)
 
-    # unmapped_jiff = jiff[jiff.tid.isin(mapped.index.get_level_values('tid'))]
     mask = vm.index.get_level_values('tid') == -1
     unmapped = vm[mask]
     name = align_by_name(unmapped, jiff)
@@ -76,7 +75,6 @@ def align_energy(state, energy):
 
 def align(vm, jiff, energy, timestamps):
     timestamps = {int(k): int(v) // (1000 * 500) for k, v in timestamps.items()}
-    # timestamps = {int(k): int(v) for k, v in timestamps.items()}
 
     state = align_state(vm, jiff)
     attributed = align_energy(state, energy)

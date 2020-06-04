@@ -37,7 +37,6 @@ def filter_to_application_(trace):
 def filter_to_application(df):
     mask = (df.trace == 'end') | df.trace.str.contains('chappie') | df.trace.str.contains('jlibc') | df.trace.str.contains('jrapl') | df.name.isin(JVM_JAVA)
     df = df[~mask]
-    # df.trace = df.trace.str.split(';').map(filter_to_application_)
     df.trace = df.trace.str.split('@').map(filter_to_application_)
     method = df.trace.str[0]
     df = df[(df.trace != 'end') & (method != 'e') & ~(method.str.contains('org.dacapo.harness'))]
