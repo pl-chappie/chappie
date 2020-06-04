@@ -9,20 +9,6 @@ import pandas as pd
 
 from tqdm import tqdm
 
-bench_sizes = {
-    'biojava': 'default',
-    'jython': 'default',
-    'xalan': 'default',
-    'avrora': 'large',
-    'batik': 'large',
-    'eclipse': 'large',
-    'h2': 'large',
-    'pmd': 'large',
-    'sunflow': 'large',
-    'tomcat': 'large',
-    'graphchi': 'huge',
-}
-
 def parse_timestamp(path):
     ts = np.sort([int(t) for t in json.load(open(path)).values()])
     return (np.max(ts) - np.min(ts)) / 100000000000
@@ -68,6 +54,10 @@ def main():
     calm_data = os.path.join(args.data_directory, 'calmness', 'calm')
     profile_data = os.path.join(args.data_directory, 'calmness', 'profile')
     file_from = lambda k: os.path.join('raw', str(k))
+
+    bench_sizes = pd.read_csv(os.path.join(os.path.dirname(__file__), '..', 'experiment-sizes.txt'), delimiter = ' ', header = None)
+    bench_sizes.columns = ['bench', 'sizes']
+    bench_sizes = bench_sizes.set_index('bench').sizes.to_dict()
 
     benchs = np.sort(os.listdir(calm_data))
 

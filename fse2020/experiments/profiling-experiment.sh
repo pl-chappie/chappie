@@ -30,8 +30,8 @@ mkdir $data_root
 threshold=0.90
 # hot_iters=10
 # cold_iters=10
-hot_iters=3
-cold_iters=3
+hot_iters=1
+cold_iters=2
 
 cases=$(cat $1/.calm-rates)
 set -f; IFS=$'\n'

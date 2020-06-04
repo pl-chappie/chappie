@@ -8,4 +8,3 @@ h2 large
 pmd large
 sunflow large
 tomcat large
-graphchi huge

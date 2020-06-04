@@ -39,7 +39,7 @@ public class TraceProfiler extends Profiler {
     logger.info("async-profiler set to " + (asyncRate * time / 1000) + "us");
     // TODO(timur): this needs to be changed to the chappie jar location but
     //  it's not the running jar so we'll need to do some reading
-    AsyncProfiler.getInstance("/home/chappie/build/libasyncProfiler.so").start(Events.CPU, asyncRate * time);
+    AsyncProfiler.getInstance(System.getProperty("user.dir") + "/build/libasyncProfiler.so").start(Events.CPU, asyncRate * time);
 
     this.time = time;
   }
