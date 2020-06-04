@@ -1,1 +1,1 @@
-graphchi default
+graphchi huge
