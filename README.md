@@ -11,7 +11,7 @@ Below is an excerpt from our paper abstract about this work's motivation:
 
 Our publication data can be reproduced using [this docker image](); after the image finishes, the output data can be found at `./chappie-data`.
 
-**NOTE**: `chappie` was evaluated with the system described below. There is no guarantee that it will produce the same results (or even run at all) on other systems:
+**NOTE**: The data reported in the paper was produced through an evaluation with the system described below. As energy consumption varies from system to system, e.g., the number of cores, the OS schedulers, the JVM runtime behavior, etc., a reproduction on a different system may not produce identical results as we reported in the paper:
 
  > - Dual socket Intel E5-2630 v4 2.20 GHz (20 cores)
  > - Hyper threading enabled
