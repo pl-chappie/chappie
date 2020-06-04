@@ -50,7 +50,7 @@ def main():
     if not os.path.exists(plots_path):
         os.mkdir(plots_path)
 
-    rates = pd.read_csv(os.path.join(data_path, 'summary', 'calm-rates.txt'), delimiter = ' ', header = None)
+    rates = pd.read_csv(os.path.join(data_path, '.calm-rates'), delimiter = ' ', header = None)
     rates.columns = ['bench', 'size', 'rate']
     rates = rates.set_index('bench').rate.to_dict()
 

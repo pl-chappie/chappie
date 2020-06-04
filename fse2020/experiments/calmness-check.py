@@ -9,32 +9,18 @@ import pandas as pd
 
 from tqdm import tqdm
 
-# bench_sizes = {
-#     'biojava': 'default',
-#     'jython': 'default',
-#     'xalan': 'default',
-#     'avrora': 'large',
-#     'batik': 'large',
-#     'eclipse': 'large',
-#     'h2': 'large',
-#     'pmd': 'large',
-#     'sunflow': 'large',
-#     'tomcat': 'large',
-#     'graphchi': 'huge',
-# }
-
 bench_sizes = {
     'biojava': 'default',
     'jython': 'default',
     'xalan': 'default',
-    'avrora': 'default',
-    'batik': 'default',
-    'eclipse': 'default',
-    'h2': 'default',
-    'pmd': 'default',
-    'sunflow': 'default',
-    'tomcat': 'default',
-    'graphchi': 'default',
+    'avrora': 'large',
+    'batik': 'large',
+    'eclipse': 'large',
+    'h2': 'large',
+    'pmd': 'large',
+    'sunflow': 'large',
+    'tomcat': 'large',
+    'graphchi': 'huge',
 }
 
 def parse_timestamp(path):
@@ -147,19 +133,19 @@ def main():
 
             df.append(pd.Series(index = idx, data = (bench, bench_sizes[bench], int(rate), t['mean'], t['std'], tc['corr'], tc['err'], tc['rms'], sc['corr'], sc['err'], sc['rms'])))
 
-    summary_path = os.path.join(args.data_directory, 'summary')
-    if not os.path.exists(summary_path):
-        os.mkdir(summary_path)
+    plots_path = os.path.join(args.data_directory, 'plots')
+    if not os.path.exists(plots_path):
+        os.mkdir(plots_path)
 
     df = pd.concat(df, axis = 1).T.set_index(['benchmark', 'size', 'rate']).sort_index()
-    df.to_csv(os.path.join(summary_path, 'calmness.csv'))
+    df.to_csv(os.path.join(plots_path, 'calmness.csv'))
 
     rates = df.reset_index()
     optimal_rates = rates[((abs(rates.runtime) < 0.05) | (abs(rates.runtime) <= 2 * rates.runtime_std)) & (rates.temporal > 0.85) & (rates.spatial > 0.85)]
     optimal_rates = optimal_rates[optimal_rates.groupby('benchmark').rate.apply(lambda x: x == x.min())]
     lowest_rates = rates[rates.groupby('benchmark').rate.apply(lambda x: x == x.min()) & ~rates.benchmark.isin(optimal_rates.benchmark)]
     rates = pd.concat([optimal_rates, lowest_rates]).set_index('benchmark').sort_index().reset_index()
-    f = open(os.path.join(summary_path, 'calm-rates.txt'), 'w')
+    f = open(os.path.join(args.data_directory, '.calm-rates'), 'w')
     for bench, size, rate in rates[['benchmark', 'size', 'rate']].values:
         f.write(' '.join([bench, size, str(rate)]) + '\n')
     f.close()
