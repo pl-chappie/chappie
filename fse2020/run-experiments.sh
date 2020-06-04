@@ -3,8 +3,7 @@
 dir=`dirname "$0"`
 work_dir=chappie-data
 mkdir $work_dir
-
-realpath $work_dir
+mkdir $work_dir/test
 
 # calmness experiment
 # $dir/experiments/calmness-experiment.sh $work_dir
