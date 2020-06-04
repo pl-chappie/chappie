@@ -133,9 +133,11 @@ def main():
     rates = df.reset_index()
     optimal_rates = rates[((abs(rates.runtime) < 0.05) | (abs(rates.runtime) <= 2 * rates.runtime_std)) & (rates.temporal > 0.85) & (rates.spatial > 0.85)]
     optimal_rates = optimal_rates[optimal_rates.groupby('benchmark').rate.apply(lambda x: x == x.min())]
-    lowest_rates = rates[rates.groupby('benchmark').rate.apply(lambda x: x == x.min()) & ~rates.benchmark.isin(optimal_rates.benchmark)]
+    lowest_rates = rates[rates.groupby('benchmark').rate.apply(lambda x: x == x.min()) & ~rates.benchmark.isin(optimal_rates.benchmark if optimal_rates.columns > 0 else [])]
     rates = pd.concat([optimal_rates, lowest_rates]).set_index('benchmark').sort_index().reset_index()
     f = open(os.path.join(args.data_directory, '.calm-rates'), 'w')
+    print(os.path.join(args.data_directory, '.calm-rates'))
+    print(rates)
     for bench, size, rate in rates[['benchmark', 'size', 'rate']].values:
         f.write(' '.join([bench, size, str(rate)]) + '\n')
     f.close()
