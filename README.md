@@ -12,19 +12,19 @@ Below is an excerpt from our paper abstract about this work's motivation:
  Our publication data can be reproduced using a docker image. You can either run the image from docker hub:
 
  ```bash
- docker run --privileged --cap-add=ALL -it -v /dev:/dev -v /lib/modules:/lib/modules chappie-fse20
+ docker run --privileged --cap-add=ALL -it -v /dev:/dev -v /lib/modules:/lib/modules timurbey/chappie-fse20:1.0
  ```
 
  or build and run the provided `Dockerfile`:
 
  ```bash
  docker build -t chappie-fse20 .
- docker run --privileged --cap-add=ALL -it -v /dev:/dev -v /lib/modules:/lib/modules chappie-fse20
+ docker run --privileged --cap-add=ALL -it -v /dev:/dev -v /lib/modules:/lib/modules timurbey/chappie-fse20:1.0
  ```
 
  After execution finishes, output data can be found at `./chappie/chappie-data` inside the container.
 
- **NOTE**: The data reported in the paper was produced through an evaluation with the system described below. As energy consumption varies from system to system, e.g., the number of cores, the OS schedulers, the JVM runtime behavior, etc., a reproduction on a different system may not produce identical results as we reported in the paper. Specifically, `chappie` requires the use of RAPL, which only works on Intel cpus:
+ **NOTE**: The data reported in the paper was produced through an evaluation with the system described below. As energy consumption varies from system to system, e.g., the number of cores, the OS schedulers, the JVM runtime behavior, etc., a reproduction on a different system may not produce identical results as we reported in the paper. Specifically, `chappie` requires the use of [RAPL](https://en.wikipedia.org/wiki/Perf_(Linux)#RAPL), which only works on Intel cpus:
 
   > - Dual socket Intel E5-2630 v4 2.20 GHz (20 cores)
   > - Hyper threading enabled
@@ -42,23 +42,23 @@ If you prefer to build `chappie` from source, please follow the instructions bel
 `chappie` requires the following to build and run:
 
 ```bash
-apt-get install -y git openjdk-11-jdk libjna-jni maven ant make python3 python3-pip kmod msr-tools msrtool
+apt-get install -y git openjdk-11-jdk libjna-jni maven ant make python3 python3-pip kmod msr-tools msrtool wget
 pip3 install numpy scipy pandas tqdm matplotlib seaborn
 ```
 
-Once everything is installed, `chappie` can be built with:
+Once everything is installed, `chappie` can be built from the top-level with:
 
 ```bash
-cd chappie/vendor/jlibc && mvn package
-cd chappie/vendor/async-profiler && make
-cd chappie/src/java/jrapl-port && make
-cd chappie && ant deps && ant jar
+cd vendor/jlibc && mvn package && cd ../..
+cd vendor/async-profiler && make && cd ../..
+cd src/java/jrapl-port && make && cd ../..
+ant deps && ant jar
 ```
 
 To reproduced the FSE experiments as described in the pre-built environment steps, you will need to build the dacapo wrapper:
 
 ```bash
-cd chappie/wrapper && ant deps && ant jar
+cd wrapper && ant deps && ant jar && cd ..
 ```
 
 ## Execution ##
@@ -66,10 +66,12 @@ cd chappie/wrapper && ant deps && ant jar
 Once the wrapper is built, the entire experiment can be run with:
 
 ```bash
-cd chappie && sudo ./fse2020/run-experiments.sh
+cd chappie && ./fse2020/run-experiments.sh
 ```
 
 This will produce the same output as the docker image above at `./chappie/chappie-data`
+
+**NOTE**: Because of [RAPL](https://en.wikipedia.org/wiki/Perf_(Linux)#RAPL), you will need `su` or `sudo` access to produce energy footprints with `chappie`.
 
 # Profiling arbitrary applications #
 
@@ -96,16 +98,16 @@ public class FooWrapper {
 
 When `stop` is called, `chappie` will dump all collected raw data to disk.
 
-## Step 2: Compile wrapper ##
+## Step 2: Compile the wrapper ##
 
-The implemented wrapper needs to be compiled into a `.class` or `.jar` for execution with `java`. Unless you have many dependencies, `javac` + `jar` should be sufficient.
+The implemented wrapper needs to be compiled into a `.class` or `.jar` for execution with `java`. Unless you have many dependencies, `javac` (and maybe `jar`) should be sufficient.
 
 ## Step 3: Bootstrapping the profiler ##
 
 The profiler can be bootstrapped using the following command. `chappie.sh`, as a script, involves the execution of `java`. If your application has additional arguments being fed to `java`, they should be listed as `foo_arg_0`, etc.:
 
 ```bash
-./chappie.sh -cp foo-wrapper.jar FooWrapper foo_arg_0 foo_arg_1 ...
+./chappie.sh -cp foo-wrapper.jar:foo-dependencies FooWrapper foo_arg_0 foo_arg_1 ...
 ```
 
 The above script will produce a `chappie-logs` directory.
