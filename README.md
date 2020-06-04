@@ -9,15 +9,9 @@ Below is an excerpt from our paper abstract about this work's motivation:
 
 # FSE 2020 experiment reproduction #
 
-Our publication data can be reproduced using a pre-built environment provided [here](). Once the environment is setup, the experiments and data can be reproduced with the command:
+Our publication data can be reproduced using [this docker image](); after the image finishes, the output data can be found at `./chappie-data`.
 
-```bash
-sudo ./fse2020/run-experiments.sh path/to/data
-```
-
-This will produce a data set similar to the provided data at `./fse2020/data` and validate it within a threshold of `THRESHOLD_VALUE`.
-
-**NOTE**: `chappie` was evaluted with the system described below. There is no guarantee that it will produce the same results on other systems.:
+**NOTE**: `chappie` was evaluated with the system described below. There is no guarantee that it will produce the same results (or even run at all) on other systems:
 
  > - Dual socket Intel E5-2630 v4 2.20 GHz (20 cores)
  > - Hyper threading enabled
@@ -32,23 +26,31 @@ If you prefer to build `chappie` from source, please follow the instructions bel
 
 ## Building ##
 
-`chappie` requires the following:
+`chappie` requires the following to build and run:
 
- > - `ant`
- > - `java` (works on 8 but is intended for use with 9+)
- > - `jni`
- > - `make`
- > - `maven`
- > - `python3`
+`apt-get install -y git openjdk-11-jdk libjna-jni maven ant make python3 python3-pip kmod msr-tools msrtool`
 
 Once everything is installed, `chappie` can be built with:
 
 ```bash
-ant deps
-ant jar
+cd chappie/vendor/jlibc && mvn package
+cd chappie/vendor/async-profiler && make
+cd chappie/src/java/jrapl-port && make
+ant deps && ant jar
 ```
 
-Experiments can now be reproduced as described in the pre-built environment steps.
+To reproduced the FSE experiments as described in the pre-built environment steps, you will need to build the dacapo wrapper:
+
+```bash
+cd chappie/wrapper && ant deps && ant jar
+cd chappie/wrapper/jar && java -jar dacapo-evaluation-git.jar --extdata-install .
+```
+
+Once the wrapper is built, the entire experiment can be run with:
+
+```bash
+sudo ./fse2020/run-experiments.sh path/to/data
+```
 
 # Public API Usage #
 
