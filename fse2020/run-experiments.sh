@@ -1,8 +1,7 @@
 #!/bin/bash
 
 dir=`dirname "$0"`
-work_dir=~/chappie-data
-work_dir=fse2020-test
+work_dir=chappie-data
 mkdir $work_dir
 
 # calmness experiment

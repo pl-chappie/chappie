@@ -1,3 +1,2 @@
-batik default
-eclipse default
+graphchi default
 sunflow default
