@@ -6,9 +6,9 @@ work_dir=fse2020-test
 mkdir $work_dir
 
 # calmness experiment
-# $dir/experiments/calmness-experiment.sh $work_dir
+$dir/experiments/calmness-experiment.sh $work_dir
 python3 $dir/experiments/calmness-check.py -d $work_dir
 
 # profile experiment
-# $dir/experiments/profiling-experiment.sh $work_dir
-# $dir/plotting.sh $work_dir
+$dir/experiments/profiling-experiment.sh $work_dir
+$dir/plotting.sh $work_dir
