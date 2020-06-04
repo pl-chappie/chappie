@@ -1,5 +1,3 @@
 batik small
-biojava small
 jython small
 sunflow small
-xalan small
